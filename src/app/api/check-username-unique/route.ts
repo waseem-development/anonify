@@ -7,24 +7,18 @@ import { UserModel } from "@/model/User.model";
 import { z } from "zod";
 import { usernameValidation } from "@/schemas/signUpSchema";
 
-// Zod schema for query validation
 const UsernameQuerySchema = z.object({
   username: usernameValidation,
 });
 
 export async function GET(request: Request) {
   try {
-    // 1️⃣ Connect to DB
-    await dbConnect();
+    await dbConnect(); // connect using cached pattern
 
-    // 2️⃣ Parse query parameters
     const { searchParams } = new URL(request.url);
-    const queryParams = {
-      username: searchParams.get("username"),
-    };
+    const username = searchParams.get("username");
 
-    // 3️⃣ Validate query with Zod
-    const result = UsernameQuerySchema.safeParse(queryParams);
+    const result = UsernameQuerySchema.safeParse({ username });
     if (!result.success) {
       const usernameErrors = result.error.format().username?._errors || [];
       return NextResponse.json(
@@ -39,15 +33,12 @@ export async function GET(request: Request) {
       );
     }
 
-    const { username } = result.data;
-
-    // 4️⃣ Check if username exists and is verified
-    const existingVerifiedUser = await UserModel.findOne({
-      username,
+    const existingUser = await UserModel.findOne({
+      username: result.data.username,
       isVerified: true,
     });
 
-    if (existingVerifiedUser) {
+    if (existingUser) {
       return NextResponse.json(
         {
           success: false,
@@ -57,7 +48,6 @@ export async function GET(request: Request) {
       );
     }
 
-    // 5️⃣ Username is unique
     return NextResponse.json(
       {
         success: true,
@@ -67,7 +57,6 @@ export async function GET(request: Request) {
     );
   } catch (error) {
     console.error("Error checking username:", error);
-
     return NextResponse.json(
       {
         success: false,
