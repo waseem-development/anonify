@@ -1,0 +1,112 @@
+// src/app/api/sign-up/route.ts
+import { dbConnect } from "@/lib/dbConnect";
+import { UserModel } from "@/model/User.model";
+import bcrypt from "bcryptjs";
+import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
+import { NextResponse } from "next/server";
+
+export async function POST(request: Request) {
+  await dbConnect();
+
+  try {
+    const { username, email, password } = await request.json();
+
+    if (!username || !email || !password) {
+      return NextResponse.json(
+        { success: false, message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Check if username is already taken by a verified user
+    const existingVerifiedUserByUsername = await UserModel.findOne({
+      username,
+      isVerified: true,
+    });
+
+    if (existingVerifiedUserByUsername) {
+      return NextResponse.json(
+        { success: false, message: "Username is already taken" },
+        { status: 400 }
+      );
+    }
+
+    // Generate a 6-digit verification code
+    const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiryDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+
+    // Check if email already exists
+    const existingUserByEmail = await UserModel.findOne({ email });
+
+    if (existingUserByEmail) {
+      if (existingUserByEmail.isVerified) {
+        return NextResponse.json(
+          { success: false, message: "User already exists with this email" },
+          { status: 400 }
+        );
+      } else {
+        // Update existing unverified user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        existingUserByEmail.password = hashedPassword;
+        existingUserByEmail.verifyCode = verifyCode;
+        existingUserByEmail.verifyCodeExpiry = expiryDate;
+        await existingUserByEmail.save();
+      }
+    } else {
+      // Create a new user
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newUser = new UserModel({
+        username,
+        email,
+        password: hashedPassword,
+        verifyCode,
+        verifyCodeExpiry: expiryDate,
+        isVerified: false,
+        isAcceptingMessages: true,
+        messages: [],
+      });
+
+      await newUser.save();
+    }
+
+    // Send verification email
+    const emailResponse = await sendVerificationEmail(email, username, verifyCode);
+
+    if (!emailResponse.success) {
+      console.error("Failed to send verification email:", emailResponse.message);
+      return NextResponse.json(
+        { success: false, message: emailResponse.message },
+        { status: 500 }
+      );
+    }
+
+    console.log(`Verification code sent to ${email}: ${verifyCode}`);
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "User registered successfully. Please verify your account.",
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Error registering user:", error);
+    return NextResponse.json(
+      { success: false, message: "Error registering user" },
+      { status: 500 }
+    );
+  }
+}
+
+// Add this GET method handler to prevent 405 errors
+export async function GET() {
+  return NextResponse.json(
+    { 
+      message: "Sign-up API endpoint",
+      instructions: "Use POST method with { username, email, password } to register a new user",
+      status: "active"
+    },
+    { status: 200 }
+  );
+}
