@@ -1,4 +1,6 @@
 // /app/api/verify-code/route.ts
+export const runtime = "nodejs";
+
 import {dbConnect} from '@/lib/dbConnect';
 import {UserModel} from '@/model/User.model';
 

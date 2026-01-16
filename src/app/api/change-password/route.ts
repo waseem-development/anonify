@@ -1,4 +1,6 @@
 // src/app/api/change-password/route.ts
+export const runtime = "nodejs";
+
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/options";
 import { dbConnect } from "@/lib/dbConnect";

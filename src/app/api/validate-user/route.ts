@@ -1,4 +1,6 @@
 // src/app/api/validate-user/route.ts
+export const runtime = "nodejs";
+
 import { NextRequest, NextResponse } from 'next/server';
 import { UserModel } from '@/model/User.model';
 import { dbConnect } from '@/lib/dbConnect';

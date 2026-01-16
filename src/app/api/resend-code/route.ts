@@ -1,4 +1,6 @@
 // src/app/api/resend-code/route.ts
+export const runtime = "nodejs";
+
 import { dbConnect } from "@/lib/dbConnect";
 import { UserModel } from "@/model/User.model";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";

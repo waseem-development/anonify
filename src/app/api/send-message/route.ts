@@ -1,4 +1,6 @@
 // src/app/api/send-message/route.ts
+export const runtime = "nodejs";
+
 import { NextResponse } from 'next/server';
 import { UserModel, MessageDocument } from '@/model/User.model';
 import { dbConnect } from '@/lib/dbConnect';
