@@ -20,11 +20,9 @@ export async function middleware(request: NextRequest) {
 
   // Allow access to verify page even if authenticated (needed for verification process)
   if (token && url.pathname.startsWith('/verify')) {
-    // Check if user is already verified
     if (token.isVerified) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-    // Allow access to verification page if not verified
     return NextResponse.next();
   }
 
@@ -49,7 +47,15 @@ export default withAuth(
   }
 );
 
+// ✅ Updated matcher: exclude static files and public assets
 export const config = {
-  matcher: ['/dashboard/:path*', '/sign-in', '/sign-up', '/verify/:path*'],
-  // Removed '/' from matcher to allow access to home page
+  matcher: [
+    // Apply middleware only to pages that need auth
+    '/dashboard/:path*',
+    '/sign-in',
+    '/sign-up',
+    '/verify/:path*',
+    // Exclude static assets and public files
+    '/((?!_next/static|_next/image|favicon.ico|site.webmanifest).*)',
+  ],
 };
