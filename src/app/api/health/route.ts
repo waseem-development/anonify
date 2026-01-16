@@ -14,11 +14,14 @@ export async function GET() {
       mongooseReadyState: mongoose.connection.readyState, // 1 = connected
     });
   } catch (err) {
+    // ✅ Minimal fix for TypeScript
+    const errorMessage = err instanceof Error ? err.message : String(err);
+
     return NextResponse.json({
       success: false,
       message: "Failed to connect to DB",
       env: { mongodbPresent: hasMongoEnv },
-      error: err?.message || String(err),
+      error: errorMessage,
     }, { status: 500 });
   }
 }
