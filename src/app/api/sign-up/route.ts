@@ -1,4 +1,6 @@
 // src/app/api/sign-up/route.ts
+export const runtime = "nodejs";
+
 import { dbConnect } from "@/lib/dbConnect";
 import { UserModel } from "@/model/User.model";
 import bcrypt from "bcryptjs";
